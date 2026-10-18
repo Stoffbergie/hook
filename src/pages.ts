@@ -150,9 +150,11 @@ const key = location.hash.slice(1)
 const state = document.getElementById("state")
 const log = document.getElementById("log")
 const rows = new Map()
+let newestId = 0
+let oldestId = 0
 const size = (bytes) => bytes < 1024 ? bytes + " B" : bytes < 1048576 ? (bytes / 1024).toFixed(1) + " KB" : (bytes / 1048576).toFixed(1) + " MB"
 const time = (iso) => new Date(iso).toLocaleTimeString([], { hour12: false })
-const render = (request, prepend) => {
+const render = (request) => {
   let row = rows.get(request.id)
   if (!row) {
     row = document.createElement("button")
@@ -160,8 +162,23 @@ const render = (request, prepend) => {
     row.innerHTML = "<span class=dim></span><span></span><span></span><span class=dim></span>"
     row.addEventListener("click", () => toggle(request.id, row))
     rows.set(request.id, row)
-    if (prepend) log.prepend(row)
-    else log.append(row)
+    if (request.id > newestId) {
+      log.prepend(row)
+      newestId = request.id
+    } else if (request.id < oldestId) {
+      log.append(row)
+    } else {
+      let nextId = 0
+      let nextRow = null
+      for (const [id, candidate] of rows) {
+        if (id < request.id && id > nextId) {
+          nextId = id
+          nextRow = candidate
+        }
+      }
+      log.insertBefore(row, nextRow)
+    }
+    if (!oldestId || request.id < oldestId) oldestId = request.id
   }
   const cells = row.children
   cells[0].textContent = time(request.at)
@@ -188,12 +205,23 @@ const start = async () => {
   if (!response.ok) return void (state.textContent = response.status === 401 ? "That key does not match this hook." : "This hook does not exist or has expired.")
   const hook = await response.json()
   state.textContent = "Catching. Send requests to the URL above; they appear below."
-  hook.requests.forEach((request) => render(request, false))
+  hook.requests.forEach(render)
   const connect = () => {
     const socket = new WebSocket((location.protocol === "https:" ? "wss://" : "ws://") + location.host + "/" + name + "/connect", ["hook", key])
+    socket.onopen = async () => {
+      const after = Math.max(0, oldestId - 1)
+      try {
+        const response = await fetch("/" + name + "/requests?after=" + after + "&limit=100", { headers: { Authorization: "Bearer " + key } })
+        if (!response.ok) return socket.close()
+        const missed = await response.json()
+        missed.forEach(render)
+      } catch {
+        socket.close()
+      }
+    }
     socket.onmessage = (event) => {
       const message = JSON.parse(event.data)
-      if (message.t === "request") render(message.request, true)
+      if (message.t === "request") render(message.request)
     }
     socket.onclose = () => setTimeout(connect, 2000)
   }
