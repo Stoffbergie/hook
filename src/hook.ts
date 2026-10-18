@@ -37,7 +37,7 @@ type Row = {
 const ttlMs = 7 * 24 * 60 * 60 * 1000;
 const keepRequests = 100;
 const maxStoredBody = 1024 * 1024;
-const textDecoder = new TextDecoder("utf-8", { fatal: true, ignoreBOM: false });
+const textDecoder = new TextDecoder("utf-8", { fatal: true, ignoreBOM: true });
 
 export class Hook extends DurableObject<Env> {
   private lastBump = 0;

@@ -62,17 +62,17 @@ test("a webhook missed while the local server was down can be replayed", async (
   }
 });
 
-test("replay sends the latest captured webhook to a local server again", async () => {
+test.each(['{"id":"evt_2"}', '\uFEFF{"id":"evt_2"}'])("replay preserves the latest captured webhook body (%j)", async (body) => {
   const hook = await createHook();
   await send(hook.name, "/old", { method: "POST", body: "old" });
-  await send(hook.name, "/stripe", { method: "POST", headers: { "stripe-signature": "t=2,v1=def" }, body: '{"id":"evt_2"}' });
+  await send(hook.name, "/stripe", { method: "POST", headers: { "stripe-signature": "t=2,v1=def" }, body });
   const local = await startLocal();
   try {
     const result = await runCli(["replay", hook.watch, "--to", String(local.port)]);
     assert.equal(result.code, 0, result.output);
     assert.match(result.output, /POST\s+200\s+\/stripe/);
     assert.equal(local.received.length, 1);
-    assert.equal(local.received[0].body, '{"id":"evt_2"}');
+    assert.equal(local.received[0].body, body);
     assert.equal(local.received[0].headers["stripe-signature"], "t=2,v1=def");
   } finally {
     await local.close();
