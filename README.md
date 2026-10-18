@@ -44,6 +44,8 @@ POST    -    /stripe nothing answered on localhost:3000
 brew install stoffbergie/tap/hook
 ```
 
+For direct [Linux downloads](https://github.com/Stoffbergie/hook/releases/latest), the GNU x86_64 and ARM64 archives require glibc 2.38 or newer. The `hook-x86_64-unknown-linux-musl.tar.gz` archive does not depend on glibc. No ARM64 musl archive is published.
+
 ## Use
 
 | Do this                        | With                           |
