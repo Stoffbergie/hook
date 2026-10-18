@@ -1,0 +1,248 @@
+const SOURCE_URL = "https://github.com/Stoffbergie/hook";
+const TAGLINE = "Webhooks, caught and replayed.";
+
+const STYLE = `
+:root{--bg:#fafafa;--fg:#171717;--muted:#737373;--line:#e5e5e5;color-scheme:light dark}
+@media (prefers-color-scheme:dark){:root{--bg:#0a0a0a;--fg:#ededed;--muted:#8f8f8f;--line:#262626}}
+*{box-sizing:border-box;margin:0;padding:0}
+html{background:var(--bg);color:var(--fg);font:14px/1.7 ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,"Liberation Mono",monospace;-webkit-text-size-adjust:100%}
+body{max-width:52rem;margin:0 auto;padding:14vh 1.5rem 6rem}
+a{color:inherit;text-decoration-color:var(--muted);text-underline-offset:3px}
+header{margin-bottom:3.5rem}
+header a{font-weight:600;text-decoration:none}
+h1{font-size:1rem;font-weight:600;overflow-wrap:anywhere}
+h2{margin:3rem 0 .75rem;color:var(--muted);font-size:.75rem;font-weight:400;letter-spacing:.08em;text-transform:uppercase}
+p{color:var(--muted)}
+dt,code{font:inherit;overflow-wrap:anywhere;user-select:all}
+footer{margin-top:4rem}
+.commands{display:grid;grid-template-columns:minmax(0,1fr) 12rem;gap:.8rem 2rem}
+.commands dd{margin:0;color:var(--muted)}
+details{margin-top:2.5rem}
+summary{color:var(--muted);cursor:pointer}
+details p{margin-top:2rem}
+.log{margin-top:2rem;border-top:1px solid var(--line)}
+.row{display:grid;grid-template-columns:5.5rem 4.5rem minmax(0,1fr) 5rem;gap:1rem;padding:.35rem 0;border-bottom:1px solid var(--line);cursor:pointer;width:100%;background:none;border-left:0;border-right:0;border-top:0;color:inherit;font:inherit;text-align:left}
+.row span:nth-child(3){overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.row .dim,.dim{color:var(--muted)}
+pre{margin:.5rem 0 1rem;padding:.75rem 0;overflow-x:auto;white-space:pre-wrap;overflow-wrap:anywhere;color:var(--fg)}
+@media(max-width:600px){.commands{grid-template-columns:1fr;gap:0}.commands dd{margin-bottom:1rem}.row{grid-template-columns:4rem minmax(0,1fr) 4rem}.row span:nth-child(1){display:none}}
+:focus-visible{outline:2px solid var(--fg);outline-offset:3px}
+`;
+
+type Row = [command: string, label: string, description: string];
+type Section = { title: string; rows: Row[] };
+
+const HEADLINE = "Catch a webhook. Replay it.";
+
+const AUTOMATION_GUIDANCE =
+  "Agents and automation: create catching URLs with curl and read what arrived as JSON, sending the X-Hook-Key value as a Bearer token. Never print, log or share a hook key or the owner token. Resend captured requests with hook replay instead of rebuilding them. Delete the hooks you created when the task is done.";
+
+function usage(origin: string, domain: string): Section[] {
+  return [
+    { title: "Install", rows: [["brew install stoffbergie/tap/hook", "", "Install the hook CLI with Homebrew on macOS or Linux."]] },
+    {
+      title: "Use",
+      rows: [
+        ["hook", "Get a URL", `Create a URL on ${domain} that records every request sent to it and replies ok, and print each request as it arrives.`],
+        [
+          "hook --to 3000",
+          "Deliver to localhost",
+          "Also send each request to localhost:3000 as it arrives, with its method, path, headers and body. Your server's reply is printed here; the sender always gets ok."
+        ],
+        [
+          "hook replay stripe --to 3000",
+          "Replay a webhook",
+          "Send the latest recorded request to a local port again, signature headers and all. Useful for webhooks that arrived while your server was down."
+        ],
+        ["hook ls", "Your hooks", "List the hooks created from this machine with their URLs."],
+        ["hook rm stripe", "Delete a hook", "Remove a hook and everything it recorded straight away."]
+      ]
+    },
+    {
+      title: "More",
+      rows: [
+        ["hook --name stripe", "Pick the URL", `Use a fixed URL like stripe.${domain} and keep it every time you start hook with that name. Needs the owner token.`],
+        ["hook watch stripe --to 3000", "Pick up later", "Watch a hook created earlier and, with --to, deliver new requests to a local port. Its watch link shows the same thing live in a browser."],
+        ["hook replay stripe 12 15 --to http://localhost:8080", "Replay chosen requests", "Replay requests by id, in order, to a local port or any URL."],
+        ["hook config --token <token>", "Set the owner token", "Save the owner token that allows fixed names on this machine."]
+      ]
+    },
+    {
+      title: "curl",
+      rows: [
+        [
+          `curl -i -X POST ${origin}`,
+          "Get a URL",
+          "Create a catching URL. The response has the URL, an X-Hook-Key header for reading what arrived and an X-Hook-Watch link for the browser. Add -H 'Accept: application/json' for JSON."
+        ],
+        [
+          `curl https://<name>.${domain}/stripe -d '{"paid":true}'`,
+          "Send it a webhook",
+          "Any method, path, header and body is recorded. Bodies are kept up to 1 MB each, and the latest 100 requests are kept."
+        ],
+        [
+          `curl -H 'Authorization: Bearer <key>' ${origin}/<name>`,
+          "See what arrived",
+          "JSON with the URL, when it expires and the latest requests. Add /requests/<id> for one request with its headers and body."
+        ],
+        [`curl -X DELETE -H 'Authorization: Bearer <key>' ${origin}/<name>`, "Delete a hook", "Remove the URL and everything it recorded."]
+      ]
+    }
+  ];
+}
+
+const LIMITS =
+  "Hooks last 7 days after their last request or watcher. Each keeps its latest 100 requests with bodies up to 1 MB. Errors are plain text: 401 missing key, 403 owner only, 404 unknown hook, 429 too many requests.";
+
+export function homeText(origin: string, domain: string): string {
+  const lines = [`hook: ${TAGLINE.toLowerCase()}`, "", AUTOMATION_GUIDANCE, ""];
+  for (const section of usage(origin, domain)) {
+    lines.push(section.title.toUpperCase());
+    const width = Math.max(...section.rows.map(([command]) => command.length));
+    for (const [command, , description] of section.rows) lines.push(`  ${command.padEnd(width)}  # ${description}`);
+    lines.push("");
+  }
+  lines.push(LIMITS, "");
+  return lines.join("\n");
+}
+
+export function homePage(origin: string, domain: string): string {
+  const sections = usage(origin, domain).map((section) => {
+    const rows = section.rows.map(([command, label, description]) => `<dt>${escapeHtml(command)}</dt><dd>${escapeHtml(label)}<span hidden> ${escapeHtml(description)}</span></dd>`).join("");
+    return `<h2>${section.title}</h2><dl class="commands">${rows}</dl>`;
+  });
+  return layout(
+    `hook · ${HEADLINE}`,
+    `<h1>${HEADLINE}</h1>
+<p hidden id="automation">${escapeHtml(AUTOMATION_GUIDANCE)}</p>
+${sections.slice(0, 2).join("")}
+<details><summary>More options</summary>${sections.slice(2).join("")}<p>${escapeHtml(LIMITS)}</p></details>
+<footer><p><a href="${SOURCE_URL}">Source</a></p></footer>
+<script type="application/ld+json">${JSON.stringify({ "@context": "https://schema.org", "@type": "WebSite", name: "hook", url: `${origin}/`, description: TAGLINE })}</script>`,
+    {
+      description: `${TAGLINE} A URL that records every request, delivers it to localhost and replays it on demand. No accounts.`,
+      url: `${origin}/`,
+      image: `${origin}/social/hook.png`,
+      index: true
+    }
+  );
+}
+
+export function viewerPage(name: string, domain: string): string {
+  const url = `https://${name}.${domain}`;
+  return layout(
+    `${name} · hook`,
+    `<h1>${escapeHtml(url)}</h1>
+<p id="state">Connecting…</p>
+<div class="log" id="log"></div>
+<script>${VIEWER_SCRIPT.replace("__NAME__", JSON.stringify(name))}</script>`,
+    { description: "Requests to a hook, live." }
+  );
+}
+
+export function notFoundPage(): string {
+  return layout("Not found · hook", `<h1>Not found</h1>\n<p>Nothing is hooked here.</p>`, { description: "Nothing is hooked here." });
+}
+
+const VIEWER_SCRIPT = `
+const name = __NAME__
+const key = location.hash.slice(1)
+const state = document.getElementById("state")
+const log = document.getElementById("log")
+const rows = new Map()
+const size = (bytes) => bytes < 1024 ? bytes + " B" : bytes < 1048576 ? (bytes / 1024).toFixed(1) + " KB" : (bytes / 1048576).toFixed(1) + " MB"
+const time = (iso) => new Date(iso).toLocaleTimeString([], { hour12: false })
+const render = (request, prepend) => {
+  let row = rows.get(request.id)
+  if (!row) {
+    row = document.createElement("button")
+    row.className = "row"
+    row.innerHTML = "<span class=dim></span><span></span><span></span><span class=dim></span>"
+    row.addEventListener("click", () => toggle(request.id, row))
+    rows.set(request.id, row)
+    if (prepend) log.prepend(row)
+    else log.append(row)
+  }
+  const cells = row.children
+  cells[0].textContent = time(request.at)
+  cells[1].textContent = request.method
+  cells[2].textContent = request.path
+  cells[3].textContent = size(request.size)
+}
+const toggle = async (id, row) => {
+  const open = row.nextElementSibling
+  if (open && open.tagName === "PRE") return open.remove()
+  const pre = document.createElement("pre")
+  pre.textContent = "Loading…"
+  row.after(pre)
+  const response = await fetch("/" + name + "/requests/" + id, { headers: { Authorization: "Bearer " + key } })
+  const detail = await response.json()
+  let body = detail.bodyEncoding === "base64" ? "(binary, " + size(detail.size) + ")" : detail.body
+  try { body = JSON.stringify(JSON.parse(body), null, 2) } catch {}
+  const headers = Object.entries(detail.headers).map(([k, v]) => k + ": " + v).join("\\n")
+  pre.textContent = detail.method + " " + detail.path + "\\n" + headers + (body ? "\\n\\n" + body : "") + (detail.truncated ? "\\n\\n(body cut at 1 MB)" : "")
+}
+const start = async () => {
+  if (!key) return void (state.textContent = "This link is missing its key. Use the full link with #key at the end.")
+  const response = await fetch("/" + name, { headers: { Authorization: "Bearer " + key } })
+  if (!response.ok) return void (state.textContent = response.status === 401 ? "That key does not match this hook." : "This hook does not exist or has expired.")
+  const hook = await response.json()
+  state.textContent = "Catching. Send requests to the URL above; they appear below."
+  hook.requests.forEach((request) => render(request, false))
+  const connect = () => {
+    const socket = new WebSocket((location.protocol === "https:" ? "wss://" : "ws://") + location.host + "/" + name + "/connect", ["hook", key])
+    socket.onmessage = (event) => {
+      const message = JSON.parse(event.data)
+      if (message.t === "request") render(message.request, true)
+    }
+    socket.onclose = () => setTimeout(connect, 2000)
+  }
+  connect()
+}
+start()
+`;
+
+function layout(title: string, body: string, metadata: { description: string; url?: string; image?: string; index?: boolean }): string {
+  const social =
+    metadata.url && metadata.image
+      ? `<link rel="canonical" href="${escapeHtml(metadata.url)}">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="hook">
+<meta property="og:title" content="${escapeHtml(title)}">
+<meta property="og:description" content="${escapeHtml(metadata.description)}">
+<meta property="og:url" content="${escapeHtml(metadata.url)}">
+<meta property="og:image" content="${escapeHtml(metadata.image)}">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="${escapeHtml(TAGLINE)}">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="${escapeHtml(title)}">
+<meta name="twitter:description" content="${escapeHtml(metadata.description)}">
+<meta name="twitter:image" content="${escapeHtml(metadata.image)}">`
+      : "";
+  return `<!doctype html>
+<html lang="en" prefix="og: https://ogp.me/ns#">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>${escapeHtml(title)}</title>
+<meta name="description" content="${escapeHtml(metadata.description)}">
+<meta name="robots" content="${metadata.index ? "index, follow" : "noindex, nofollow"}">
+${social}
+<link rel="icon" href="/favicon.png" type="image/png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<style>${STYLE}</style>
+</head>
+<body>
+<header><a href="/">hook</a></header>
+<main>
+${body}
+</main>
+</body>
+</html>`;
+}
+
+function escapeHtml(value: string): string {
+  return value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+}

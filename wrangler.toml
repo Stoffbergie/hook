@@ -1,0 +1,39 @@
+name = "hook"
+main = "src/worker.ts"
+compatibility_date = "2026-10-12"
+account_id = "628c0e516646e33b3f22f2e8741bf0a5"
+workers_dev = false
+upload_source_maps = true
+
+routes = [{ pattern = "hook.stoff.dev", custom_domain = true }, { pattern = "*.hook.stoff.dev/*", zone_name = "stoff.dev" }]
+
+[vars]
+HOOK_DOMAIN = "hook.stoff.dev"
+
+[observability]
+enabled = true
+head_sampling_rate = 0.1
+
+[assets]
+directory = "public"
+
+[triggers]
+crons = []
+
+[[durable_objects.bindings]]
+name = "HOOKS"
+class_name = "Hook"
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["Hook"]
+
+[[ratelimits]]
+name = "CREATES"
+namespace_id = "2004"
+simple = { limit = 30, period = 60 }
+
+[[ratelimits]]
+name = "LOOKUPS"
+namespace_id = "2005"
+simple = { limit = 300, period = 60 }
