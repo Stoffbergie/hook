@@ -85,7 +85,6 @@ async fn arrived(
     if last.is_some_and(|seen| request.id <= seen) {
         return Ok(());
     }
-    *last = Some(request.id);
     match deliverer {
         Some(deliverer) => {
             deliverer.send(hook, request.id).await?;
@@ -97,5 +96,6 @@ async fn arrived(
             &output::size(request.size),
         ),
     }
+    *last = Some(request.id);
     Ok(())
 }
