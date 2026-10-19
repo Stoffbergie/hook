@@ -58,9 +58,13 @@ enum Command {
     },
 }
 
+fn main() {
+    execute(Cli::parse());
+}
+
 #[tokio::main(flavor = "current_thread")]
-async fn main() {
-    if let Err(error) = run(Cli::parse()).await {
+async fn execute(cli: Cli) {
+    if let Err(error) = run(cli).await {
         eprintln!("hook: {error:#}");
         std::process::exit(1);
     }
