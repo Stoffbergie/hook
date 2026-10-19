@@ -1,5 +1,5 @@
 use crate::{api, output};
-use anyhow::{anyhow, Result};
+use anyhow::Result;
 use base64::Engine;
 use std::time::Instant;
 
@@ -14,7 +14,6 @@ const SKIPPED: [&str; 6] = [
 
 pub struct Target {
     pub http: String,
-    pub display: String,
 }
 
 impl Target {
@@ -23,7 +22,6 @@ impl Target {
         if let Ok(port) = input.parse::<u16>() {
             return Ok(Self {
                 http: format!("http://localhost:{port}"),
-                display: format!("localhost:{port}"),
             });
         }
         let http = if input.contains("://") {
@@ -31,11 +29,13 @@ impl Target {
         } else {
             format!("http://{input}")
         };
-        let display = http
+        Ok(Self { http })
+    }
+
+    pub fn display(&self) -> &str {
+        self.http
             .split_once("://")
-            .map(|(_, rest)| rest.to_string())
-            .ok_or_else(|| anyhow!("could not read {input} as a port or URL"))?;
-        Ok(Self { http, display })
+            .map_or(self.http.as_str(), |(_, rest)| rest)
     }
 }
 
@@ -53,7 +53,7 @@ impl Deliverer {
     }
 
     pub fn target(&self) -> &str {
-        &self.target.display
+        self.target.display()
     }
 
     pub async fn send(&self, hook: &api::Hook, id: u64) -> Result<bool> {
@@ -86,7 +86,7 @@ impl Deliverer {
                 Ok(true)
             }
             Err(_) => {
-                let reason = format!("nothing answered on {}", self.target.display);
+                let reason = format!("nothing answered on {}", self.target.display());
                 output::request(&detail.method, &detail.path, "-", &reason);
                 Ok(false)
             }
