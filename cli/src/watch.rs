@@ -33,7 +33,7 @@ async fn session(
     let mut request = api::socket_url(&hook.name).into_client_request()?;
     request.headers_mut().insert(
         "Authorization",
-        HeaderValue::from_str(&format!("Bearer {}", hook.credential))?,
+        HeaderValue::try_from(format!("Bearer {}", hook.credential))?,
     );
     let (mut socket, _) = match tokio_tungstenite::connect_async(request).await {
         Ok(connected) => connected,
