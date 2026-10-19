@@ -202,7 +202,9 @@ const toggle = async (id, row) => {
   const response = await fetch("/" + name + "/requests/" + id, { headers: { Authorization: "Bearer " + key } })
   const detail = await response.json()
   let body = detail.bodyEncoding === "base64" ? "(binary, " + size(detail.size) + ")" : detail.body
-  try { body = JSON.stringify(JSON.parse(body), null, 2) } catch {}
+  if (detail.bodyEncoding !== "base64") {
+    try { body = JSON.stringify(JSON.parse(body), null, 2) } catch {}
+  }
   const headers = Object.entries(detail.headers).map(([k, v]) => k + ": " + v).join("\\n")
   pre.textContent = detail.method + " " + detail.path + "\\n" + headers + (body ? "\\n\\n" + body : "") + (detail.truncated ? "\\n\\n(body cut at 1 MB)" : "")
 }
