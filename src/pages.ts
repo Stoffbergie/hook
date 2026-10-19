@@ -1,5 +1,5 @@
 const SOURCE_URL = "https://github.com/Stoffbergie/hook";
-const TAGLINE = "Webhooks, caught and replayed.";
+const TAGLINE = "Capture, inspect and replay webhooks to localhost.";
 
 const STYLE = `
 :root{--bg:#fafafa;--fg:#171717;--muted:#737373;--line:#e5e5e5;color-scheme:light dark}
@@ -31,8 +31,6 @@ pre{margin:.5rem 0 1rem;padding:.75rem 0;overflow-x:auto;white-space:pre-wrap;ov
 
 type Row = [command: string, label: string, description: string];
 type Section = { title: string; rows: Row[] };
-
-const HEADLINE = "Catch a webhook. Replay it.";
 
 const AUTOMATION_GUIDANCE =
   "Agents and automation: create catching URLs with curl and read what arrived as JSON, sending the X-Hook-Key value as a Bearer token. Never print, log or share a hook key or the owner token. Resend captured requests with hook replay instead of rebuilding them. Delete the hooks you created when the task is done.";
@@ -95,7 +93,7 @@ const LIMITS =
   "Hooks last 7 days after their last request or watcher. Each keeps its latest 100 requests with bodies up to 1 MB. Errors are plain text: 401 missing key, 403 owner only, 404 unknown hook, 429 too many requests.";
 
 export function homeText(origin: string, domain: string): string {
-  const lines = [`hook: ${TAGLINE.toLowerCase()}`, "", AUTOMATION_GUIDANCE, ""];
+  const lines = [`hook: ${TAGLINE}`, "", AUTOMATION_GUIDANCE, ""];
   for (const section of usage(origin, domain)) {
     lines.push(section.title.toUpperCase());
     const width = Math.max(...section.rows.map(([command]) => command.length));
@@ -112,15 +110,15 @@ export function homePage(origin: string, domain: string): string {
     return `<h2>${section.title}</h2><dl class="commands">${rows}</dl>`;
   });
   return layout(
-    `hook · ${HEADLINE}`,
-    `<h1>${HEADLINE}</h1>
+    `hook · ${TAGLINE}`,
+    `<h1>${TAGLINE}</h1>
 <p hidden id="automation">${escapeHtml(AUTOMATION_GUIDANCE)}</p>
 ${sections.slice(0, 2).join("")}
 <details><summary>More options</summary>${sections.slice(2).join("")}<p>${escapeHtml(LIMITS)}</p></details>
 <footer><p><a href="${SOURCE_URL}">Source</a></p></footer>
 <script type="application/ld+json">${JSON.stringify({ "@context": "https://schema.org", "@type": "WebSite", name: "hook", url: `${origin}/`, description: TAGLINE })}</script>`,
     {
-      description: `${TAGLINE} A URL that records every request, delivers it to localhost and replays it on demand. No accounts.`,
+      description: TAGLINE,
       url: `${origin}/`,
       image: `${origin}/social/hook.png`,
       index: true

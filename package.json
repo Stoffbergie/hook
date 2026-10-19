@@ -2,7 +2,7 @@
   "name": "hook",
   "version": "0.1.0",
   "private": false,
-  "description": "Webhooks, caught and replayed.",
+  "description": "Capture, inspect and replay webhooks to localhost.",
   "homepage": "https://hook.stoff.dev",
   "bugs": {
     "url": "https://github.com/Stoffbergie/hook/issues"

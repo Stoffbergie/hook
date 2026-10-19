@@ -11,7 +11,7 @@ mod watch;
 #[command(
     name = "hook",
     version,
-    about = "Webhooks, caught and replayed",
+    about = "Capture, inspect and replay webhooks to localhost.",
     args_conflicts_with_subcommands = true,
     after_help = "Examples:\n  hook                               Get a URL and print requests as they arrive\n  hook --to 3000                     Also send each request to localhost:3000\n  hook --name stripe --to 3000       Use a fixed URL like stripe.hook.stoff.dev\n  hook replay stripe --to 3000       Send the latest request again\n  hook watch stripe --to 3000        Pick up a hook created earlier\n  hook config --token <token>        Save the owner token needed for fixed names\n\nSet HOOK_URL to use another server and HOOK_TOKEN to pass the token directly."
 )]
