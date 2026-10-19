@@ -1,3 +1,4 @@
+use std::borrow::Cow;
 use std::io::IsTerminal;
 use std::time::Duration;
 
@@ -7,11 +8,11 @@ fn color() -> bool {
         && !std::env::var("TERM").is_ok_and(|term| term == "dumb")
 }
 
-pub fn dim(text: &str) -> String {
+pub fn dim(text: &str) -> Cow<'_, str> {
     if color() {
-        format!("\x1b[90m{text}\x1b[0m")
+        Cow::Owned(format!("\x1b[90m{text}\x1b[0m"))
     } else {
-        text.to_string()
+        Cow::Borrowed(text)
     }
 }
 
