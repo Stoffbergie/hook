@@ -129,7 +129,11 @@ export class Hook extends DurableObject<Env> {
     if (!(await this.meta())) return text("No hook here\n", 404);
     await this.bump(false);
     const path = url.pathname + url.search;
-    const headers = Object.fromEntries([...request.headers].filter(([name]) => !name.startsWith("cf-") && !name.startsWith("x-forwarded-") && name !== "x-real-ip"));
+    const headers = Object.create(null) as Record<string, string>;
+    for (const [name, value] of request.headers) {
+      if (name.startsWith("cf-") || name.startsWith("x-forwarded-") || name === "x-real-ip") continue;
+      headers[name] = value;
+    }
     const captured = await capture(request.body);
     const at = Date.now();
     const id = this.ctx.storage.sql
