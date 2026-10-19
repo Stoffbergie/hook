@@ -215,10 +215,12 @@ const start = async () => {
   const hook = await response.json()
   state.textContent = "Catching. Send requests to the URL above; they appear below."
   renderAll(hook.requests)
+  let firstConnection = true
   const connect = () => {
+    const after = firstConnection ? newestId : Math.max(0, oldestId - 1)
+    firstConnection = false
     const socket = new WebSocket((location.protocol === "https:" ? "wss://" : "ws://") + location.host + "/" + name + "/connect", ["hook", key])
     socket.onopen = async () => {
-      const after = Math.max(0, oldestId - 1)
       try {
         const response = await fetch("/" + name + "/requests?after=" + after + "&limit=100", { headers: { Authorization: "Bearer " + key } })
         if (!response.ok) return socket.close()
