@@ -1,10 +1,14 @@
 use std::io::IsTerminal;
+use std::sync::OnceLock;
 use std::time::Duration;
 
 fn color() -> bool {
-    std::io::stdout().is_terminal()
-        && std::env::var_os("NO_COLOR").is_none()
-        && !std::env::var("TERM").is_ok_and(|term| term == "dumb")
+    static COLOR: OnceLock<bool> = OnceLock::new();
+    *COLOR.get_or_init(|| {
+        std::io::stdout().is_terminal()
+            && std::env::var_os("NO_COLOR").is_none()
+            && !std::env::var("TERM").is_ok_and(|term| term == "dumb")
+    })
 }
 
 pub fn dim(text: &str) -> String {
