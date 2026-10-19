@@ -2,6 +2,7 @@ use crate::config;
 use anyhow::{bail, Context, Result};
 use reqwest::{Client, RequestBuilder, Response};
 use serde::Deserialize;
+use std::sync::OnceLock;
 use std::time::Duration;
 
 const DEFAULT_URL: &str = "https://hook.stoff.dev";
@@ -46,10 +47,15 @@ pub fn base_url() -> String {
 }
 
 pub fn client() -> Result<Client> {
-    Ok(Client::builder()
+    static CLIENT: OnceLock<Client> = OnceLock::new();
+    if let Some(client) = CLIENT.get() {
+        return Ok(client.clone());
+    }
+    let client = Client::builder()
         .user_agent(concat!("hook/", env!("CARGO_PKG_VERSION")))
         .connect_timeout(Duration::from_secs(15))
-        .build()?)
+        .build()?;
+    Ok(CLIENT.get_or_init(|| client).clone())
 }
 
 pub fn socket_url(name: &str) -> String {
