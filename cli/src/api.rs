@@ -80,10 +80,10 @@ pub async fn create(name: Option<&str>, token: Option<&str>) -> Result<Created> 
     Ok(created)
 }
 
-pub async fn list(hook: &Hook, after: u64) -> Result<Vec<Summary>> {
+pub async fn list(hook: &Hook, after: u64, limit: usize) -> Result<Vec<Summary>> {
     let request = client()?
         .get(format!(
-            "{}/{}/requests?after={after}&limit=100",
+            "{}/{}/requests?after={after}&limit={limit}",
             base_url(),
             hook.name
         ))

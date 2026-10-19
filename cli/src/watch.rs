@@ -44,14 +44,14 @@ async fn session(
     };
     match *last {
         Some(seen) => {
-            let missed = api::list(hook, seen).await?;
+            let missed = api::list(hook, seen, 100).await?;
             for request in missed.iter().rev() {
                 arrived(hook, deliverer, last, request).await?;
             }
         }
         None => {
             *last = Some(
-                api::list(hook, 0)
+                api::list(hook, 0, 1)
                     .await?
                     .first()
                     .map_or(0, |latest| latest.id),
