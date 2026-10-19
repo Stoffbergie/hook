@@ -187,7 +187,8 @@ async function capture(body: ReadableStream<Uint8Array> | null): Promise<{ body:
   for await (const chunk of body) {
     size += chunk.byteLength;
     if (stored < maxStoredBody) {
-      const part = chunk.subarray(0, maxStoredBody - stored);
+      const remaining = maxStoredBody - stored;
+      const part = chunk.byteLength > remaining ? chunk.subarray(0, remaining) : chunk;
       chunks.push(part);
       stored += part.byteLength;
     }
