@@ -72,7 +72,7 @@ impl Deliverer {
         let mut request = self
             .client
             .request(method, format!("{}{}", self.target.http, detail.path));
-        for (name, value) in &detail.headers {
+        for (name, value) in detail.headers {
             if !SKIPPED.contains(&name.as_str()) {
                 request = request.header(name, value);
             }
