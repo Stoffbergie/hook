@@ -159,6 +159,8 @@ function tooMany(): Response {
   return text("Too many requests. Try again in a minute.\n", 429, { "Retry-After": "60" });
 }
 
-function text(body: string, status = 200, headers: Record<string, string> = {}): Response {
-  return new Response(body, { status, headers: { "Content-Type": "text/plain; charset=utf-8", ...headers } });
+const textHeaders = new Headers({ "Content-Type": "text/plain; charset=utf-8" });
+
+function text(body: string, status = 200, headers?: Record<string, string>): Response {
+  return new Response(body, { status, headers: headers ? { "Content-Type": "text/plain; charset=utf-8", ...headers } : textHeaders });
 }
