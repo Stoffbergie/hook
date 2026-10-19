@@ -2,6 +2,7 @@ use crate::config;
 use anyhow::{bail, Context, Result};
 use reqwest::{Client, RequestBuilder, Response};
 use serde::Deserialize;
+use std::borrow::Cow;
 use std::sync::OnceLock;
 use std::time::Duration;
 
@@ -39,13 +40,15 @@ pub struct Hook {
     pub credential: String,
 }
 
-pub fn base_url() -> String {
+pub fn base_url() -> Cow<'static, str> {
     match std::env::var("HOOK_URL") {
-        Ok(url) if !url.is_empty() => url.trim_end_matches('/').to_string(),
-        _ => DEFAULT_URL.to_string(),
+        Ok(mut url) if !url.is_empty() => {
+            url.truncate(url.trim_end_matches('/').len());
+            Cow::Owned(url)
+        }
+        _ => Cow::Borrowed(DEFAULT_URL),
     }
 }
-
 pub fn client() -> Result<Client> {
     static CLIENT: OnceLock<Client> = OnceLock::new();
     if let Some(client) = CLIENT.get() {
@@ -67,7 +70,7 @@ pub fn socket_url(name: &str) -> String {
             base.strip_prefix("http://")
                 .map(|rest| format!("ws://{rest}"))
         })
-        .unwrap_or(base);
+        .unwrap_or_else(|| base.into_owned());
     format!("{base}/{name}/connect")
 }
 
@@ -75,9 +78,11 @@ pub async fn create(name: Option<&str>, token: Option<&str>) -> Result<Created> 
     let client = client()?;
     let mut url = base_url();
     if let Some(name) = name {
-        url = format!("{url}/?name={name}");
+        url = format!("{url}/?name={name}").into();
     }
-    let mut request = client.post(url).header("Accept", "application/json");
+    let mut request = client
+        .post(url.as_ref())
+        .header("Accept", "application/json");
     if let Some(token) = token {
         request = request.bearer_auth(token);
     }
