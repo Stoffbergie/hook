@@ -82,13 +82,12 @@ export class Hook extends DurableObject<Env> {
   detail(id: number): RequestDetail | null {
     const row = this.ctx.storage.sql.exec<Row>("SELECT * FROM requests WHERE id = ?", id).toArray()[0];
     if (!row) return null;
-    const bytes = new Uint8Array(row.body ?? new ArrayBuffer(0));
     let body: string;
     let bodyEncoding: "utf8" | "base64" = "utf8";
     try {
-      body = textDecoder.decode(bytes);
+      body = textDecoder.decode(row.body ?? undefined);
     } catch {
-      body = bytes.toBase64();
+      body = new Uint8Array(row.body ?? new ArrayBuffer(0)).toBase64();
       bodyEncoding = "base64";
     }
     return { ...summary(row), headers: JSON.parse(row.headers) as Record<string, string>, truncated: row.truncated === 1, body, bodyEncoding };
