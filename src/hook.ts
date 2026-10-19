@@ -38,6 +38,7 @@ const ttlMs = 7 * 24 * 60 * 60 * 1000;
 const keepRequests = 100;
 const maxStoredBody = 1024 * 1024;
 const textDecoder = new TextDecoder("utf-8", { fatal: true, ignoreBOM: true });
+const textHeaders = new Headers({ "Content-Type": "text/plain; charset=utf-8" });
 
 export class Hook extends DurableObject<Env> {
   private lastBump = 0;
@@ -199,7 +200,7 @@ function summary(row: Row): RequestSummary {
 }
 
 function text(body: string, status = 200): Response {
-  return new Response(body, { status, headers: { "Content-Type": "text/plain; charset=utf-8" } });
+  return new Response(body, { status, headers: textHeaders });
 }
 
 function randomKey(): string {
