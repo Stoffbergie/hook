@@ -154,8 +154,10 @@ export class Hook extends DurableObject<Env> {
   }
 
   private broadcast(message: unknown): void {
+    const sockets = this.ctx.getWebSockets("watch");
+    if (sockets.length === 0) return;
     const payload = JSON.stringify(message);
-    for (const socket of this.ctx.getWebSockets("watch")) {
+    for (const socket of sockets) {
       try {
         socket.send(payload);
       } catch {
