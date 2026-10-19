@@ -151,8 +151,12 @@ const rows = new Map()
 let newestId = 0
 let oldestId = 0
 const size = (bytes) => bytes < 1024 ? bytes + " B" : bytes < 1048576 ? (bytes / 1024).toFixed(1) + " KB" : (bytes / 1048576).toFixed(1) + " MB"
-const time = (iso) => new Date(iso).toLocaleTimeString([], { hour12: false })
-const render = (request) => {
+const time = (iso, formatter) => {
+  const date = new Date(iso)
+  if (formatter && !Number.isNaN(date.getTime())) return formatter.format(date)
+  return date.toLocaleTimeString([], { hour12: false })
+}
+const render = (request, formatter) => {
   let row = rows.get(request.id)
   if (!row) {
     row = document.createElement("button")
@@ -179,10 +183,15 @@ const render = (request) => {
     if (!oldestId || request.id < oldestId) oldestId = request.id
   }
   const cells = row.children
-  cells[0].textContent = time(request.at)
+  cells[0].textContent = time(request.at, formatter)
   cells[1].textContent = request.method
   cells[2].textContent = request.path
   cells[3].textContent = size(request.size)
+}
+const renderAll = (requests) => {
+  if (!requests.length) return
+  const formatter = new Intl.DateTimeFormat([], { hour: "numeric", minute: "numeric", second: "numeric", hour12: false })
+  requests.forEach((request) => render(request, formatter))
 }
 const toggle = async (id, row) => {
   const open = row.nextElementSibling
@@ -203,7 +212,7 @@ const start = async () => {
   if (!response.ok) return void (state.textContent = response.status === 401 ? "That key does not match this hook." : "This hook does not exist or has expired.")
   const hook = await response.json()
   state.textContent = "Catching. Send requests to the URL above; they appear below."
-  hook.requests.forEach(render)
+  renderAll(hook.requests)
   const connect = () => {
     const socket = new WebSocket((location.protocol === "https:" ? "wss://" : "ws://") + location.host + "/" + name + "/connect", ["hook", key])
     socket.onopen = async () => {
@@ -212,7 +221,7 @@ const start = async () => {
         const response = await fetch("/" + name + "/requests?after=" + after + "&limit=100", { headers: { Authorization: "Bearer " + key } })
         if (!response.ok) return socket.close()
         const missed = await response.json()
-        missed.forEach(render)
+        renderAll(missed)
       } catch {
         socket.close()
       }
