@@ -135,10 +135,11 @@ function isOwner(c: AppContext): boolean {
   return Boolean(token && presented && same(presented, token));
 }
 
+const credentialEncoder = new TextEncoder();
+
 function same(a: string, b: string): boolean {
-  const encoder = new TextEncoder();
-  const left = encoder.encode(a);
-  const right = encoder.encode(b);
+  const left = credentialEncoder.encode(a);
+  const right = credentialEncoder.encode(b);
   return left.byteLength === right.byteLength && crypto.subtle.timingSafeEqual(left, right);
 }
 
