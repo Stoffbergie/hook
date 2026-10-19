@@ -87,7 +87,7 @@ export class Hook extends DurableObject<Env> {
     try {
       body = textDecoder.decode(bytes);
     } catch {
-      body = toBase64(bytes);
+      body = bytes.toBase64();
       bodyEncoding = "base64";
     }
     return { ...summary(row), headers: JSON.parse(row.headers) as Record<string, string>, truncated: row.truncated === 1, body, bodyEncoding };
@@ -203,14 +203,5 @@ function text(body: string, status = 200): Response {
 }
 
 function randomKey(): string {
-  return toBase64(crypto.getRandomValues(new Uint8Array(18)))
-    .replace(/\+/g, "-")
-    .replace(/\//g, "_")
-    .replace(/=+$/, "");
-}
-
-function toBase64(bytes: Uint8Array): string {
-  let binary = "";
-  for (const byte of bytes) binary += String.fromCharCode(byte);
-  return btoa(binary);
+  return crypto.getRandomValues(new Uint8Array(18)).toBase64({ alphabet: "base64url", omitPadding: true });
 }

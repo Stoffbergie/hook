@@ -3,7 +3,7 @@
     "target": "ES2024",
     "module": "ESNext",
     "moduleResolution": "Bundler",
-    "lib": ["ES2024"],
+    "lib": ["ES2024", "ESNext.TypedArrays"],
     "types": ["@cloudflare/workers-types", "node"],
     "strict": true,
     "noEmit": true,
