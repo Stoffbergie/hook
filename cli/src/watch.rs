@@ -6,8 +6,16 @@ use std::time::Duration;
 use tokio_tungstenite::tungstenite::{client::IntoClientRequest, http::HeaderValue, Message};
 
 #[derive(Deserialize)]
+enum EventKind {
+    #[serde(rename = "request")]
+    Request,
+    #[serde(other)]
+    Other,
+}
+
+#[derive(Deserialize)]
 struct Event {
-    t: String,
+    t: EventKind,
     request: Option<api::Summary>,
 }
 
@@ -69,7 +77,7 @@ async fn session(
         else {
             continue;
         };
-        if t == "request" {
+        if matches!(t, EventKind::Request) {
             arrived(hook, deliverer, last, &request).await?;
         }
     }
