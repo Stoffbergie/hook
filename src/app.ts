@@ -36,7 +36,7 @@ app.get("/sitemap.xml", (c) => {
 
 app.post("/", async (c) => {
   if (!(await allowed(c, c.env.CREATES))) return tooMany();
-  const owner = isOwner(c);
+  const owner = isOwner(c, credential(c));
   const requested = c.req.query("name");
   if (requested !== undefined && !owner) return text("Choosing a name needs the owner token\n", 403);
   if (requested !== undefined && !validName(requested)) return text("Names use 1-32 lowercase letters, digits and dashes\n", 400);
@@ -105,7 +105,7 @@ async function authorize(c: AppContext): Promise<Access> {
   const meta = await stub.meta();
   if (!meta) return { response: text("No such hook\n", 404) };
   const key = credential(c);
-  if (!isOwner(c) && (!key || !same(key, meta.key))) return { response: text("This hook needs its key\n", 401) };
+  if (!isOwner(c, key) && (!key || !same(key, meta.key))) return { response: text("This hook needs its key\n", 401) };
   return { meta, stub };
 }
 
@@ -127,9 +127,8 @@ function credential(c: AppContext): string | null {
   return null;
 }
 
-function isOwner(c: AppContext): boolean {
+function isOwner(c: AppContext, presented: string | null): boolean {
   const token = c.env.HOOK_TOKEN;
-  const presented = credential(c);
   return Boolean(token && presented && same(presented, token));
 }
 
