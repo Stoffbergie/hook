@@ -4,8 +4,9 @@ const reserved = new Set(["www", "mail", "hook", "api", "admin", "smtp", "mx", "
 
 export function randomName(): string {
   let value = "";
+  const bytes = new Uint8Array(8);
   while (value.length < 8) {
-    for (const byte of crypto.getRandomValues(new Uint8Array(8))) {
+    for (const byte of crypto.getRandomValues(bytes)) {
       if (byte >= 248) continue;
       value += alphabet[byte % alphabet.length];
       if (value.length === 8) break;
