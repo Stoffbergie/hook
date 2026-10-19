@@ -96,7 +96,7 @@ impl Deliverer {
 
 pub async fn replay(hook: &api::Hook, ids: Vec<u64>, target: Target) -> Result<()> {
     let ids = if ids.is_empty() {
-        match api::list(hook, 0).await?.first() {
+        match api::list(hook, 0, 1).await?.first() {
             Some(latest) => vec![latest.id],
             None => anyhow::bail!("{} has not received any requests to replay yet", hook.name),
         }
