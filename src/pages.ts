@@ -152,6 +152,10 @@ let newestId = 0
 let oldestId = 0
 const size = (bytes) => bytes < 1024 ? bytes + " B" : bytes < 1048576 ? (bytes / 1024).toFixed(1) + " KB" : (bytes / 1048576).toFixed(1) + " MB"
 const time = (iso, formatter) => {
+  if (formatter && typeof iso === "string") {
+    const timestamp = Date.parse(iso)
+    if (!Number.isNaN(timestamp)) return formatter.format(timestamp)
+  }
   const date = new Date(iso)
   if (formatter && !Number.isNaN(date.getTime())) return formatter.format(date)
   return date.toLocaleTimeString([], { hour12: false })
