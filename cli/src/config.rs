@@ -42,12 +42,16 @@ pub fn save(config: &Config) -> Result<()> {
 }
 
 pub fn token() -> Result<Option<String>> {
-    if let Ok(token) = std::env::var("HOOK_TOKEN") {
-        if !token.is_empty() {
-            return Ok(Some(token));
-        }
+    if let Some(token) = env_token() {
+        return Ok(Some(token));
     }
     Ok(load()?.token)
+}
+
+pub fn env_token() -> Option<String> {
+    std::env::var("HOOK_TOKEN")
+        .ok()
+        .filter(|token| !token.is_empty())
 }
 
 pub fn remember(name: &str, url: &str, key: &str) -> Result<()> {

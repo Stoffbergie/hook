@@ -129,16 +129,13 @@ pub fn resolve(input: &str) -> Result<Hook> {
     if name.is_empty() {
         bail!("give a hook name or URL");
     }
-    let saved = config::load()?
-        .hooks
-        .get(&name)
-        .map(|saved| saved.key.clone());
+    let config = config::load()?;
     let credential = if !fragment.is_empty() {
         fragment.to_string()
-    } else if let Some(key) = saved {
-        key
+    } else if let Some(saved) = config.hooks.get(&name) {
+        saved.key.clone()
     } else {
-        config::token()?.context(
+        config::env_token().or(config.token).context(
             "this machine has no key for that hook; use its full watch link ending in #key",
         )?
     };
