@@ -195,6 +195,7 @@ async function capture(body: ReadableStream<Uint8Array> | null): Promise<{ body:
       stored += part.byteLength;
     }
   }
+  if (stored === 0) return { body: emptyBody, size, truncated: false };
   if (chunks.length === 1) return { body: chunks[0], size, truncated: size > stored };
   const bytes = new Uint8Array(stored);
   let offset = 0;
