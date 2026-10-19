@@ -144,7 +144,7 @@ export class Hook extends DurableObject<Env> {
         captured.truncated ? 1 : 0
       )
       .one().id;
-    this.ctx.storage.sql.exec("DELETE FROM requests WHERE id <= ?", id - keepRequests);
+    if (id > keepRequests) this.ctx.storage.sql.exec("DELETE FROM requests WHERE id <= ?", id - keepRequests);
     this.broadcast({ t: "request", request: { id, at: new Date(at).toISOString(), method: request.method, path, size: captured.size } satisfies RequestSummary });
     return text("ok\n");
   }
