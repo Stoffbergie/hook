@@ -63,17 +63,14 @@ pub fn client() -> Result<Client> {
 
 pub fn socket_url(name: &str) -> String {
     let base = base_url();
-    let base = base
-        .strip_prefix("https://")
-        .map(|rest| format!("wss://{rest}"))
-        .or_else(|| {
-            base.strip_prefix("http://")
-                .map(|rest| format!("ws://{rest}"))
-        })
-        .unwrap_or_else(|| base.into_owned());
+    if let Some(rest) = base.strip_prefix("https://") {
+        return format!("wss://{rest}/{name}/connect");
+    }
+    if let Some(rest) = base.strip_prefix("http://") {
+        return format!("ws://{rest}/{name}/connect");
+    }
     format!("{base}/{name}/connect")
 }
-
 pub async fn create(name: Option<&str>, token: Option<&str>) -> Result<Created> {
     let client = client()?;
     let mut url = base_url();
