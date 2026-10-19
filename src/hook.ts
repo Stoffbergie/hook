@@ -37,6 +37,7 @@ type Row = {
 const ttlMs = 7 * 24 * 60 * 60 * 1000;
 const keepRequests = 100;
 const maxStoredBody = 1024 * 1024;
+const emptyBody = new Uint8Array(0);
 const textDecoder = new TextDecoder("utf-8", { fatal: true, ignoreBOM: true });
 const textHeaders = new Headers({ "Content-Type": "text/plain; charset=utf-8" });
 
@@ -181,7 +182,7 @@ export class Hook extends DurableObject<Env> {
 }
 
 async function capture(body: ReadableStream<Uint8Array> | null): Promise<{ body: Uint8Array; size: number; truncated: boolean }> {
-  if (!body) return { body: new Uint8Array(0), size: 0, truncated: false };
+  if (!body) return { body: emptyBody, size: 0, truncated: false };
   const chunks: Uint8Array[] = [];
   let stored = 0;
   let size = 0;
