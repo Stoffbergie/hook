@@ -55,13 +55,13 @@ app.get("/:name", async (c) => {
   const access = await authorize(c);
   if ("response" in access) return access.response;
   const { meta, stub } = access;
-  const expiresAt = await stub.expiresAt();
+  const { expiresAt, requests } = await stub.overview();
   return Response.json({
     name: meta.name,
     url: hookUrl(meta.name, c.env.HOOK_DOMAIN),
     owned: meta.owned,
     expiresAt: expiresAt ? new Date(expiresAt).toISOString() : null,
-    requests: await stub.list(0, 50)
+    requests
   });
 });
 

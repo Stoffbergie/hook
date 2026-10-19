@@ -69,8 +69,9 @@ export class Hook extends DurableObject<Env> {
     return this.ctx.storage.get<HookMeta>("meta");
   }
 
-  async expiresAt(): Promise<number | null> {
-    return this.ctx.storage.getAlarm();
+  async overview(): Promise<{ expiresAt: number | null; requests: RequestSummary[] }> {
+    const expiresAt = await this.ctx.storage.getAlarm();
+    return { expiresAt, requests: this.list(0, 50) };
   }
 
   list(after: number, limit: number): RequestSummary[] {
