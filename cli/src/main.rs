@@ -58,7 +58,7 @@ enum Command {
     },
 }
 
-#[tokio::main]
+#[tokio::main(flavor = "current_thread")]
 async fn main() {
     if let Err(error) = run(Cli::parse()).await {
         eprintln!("hook: {error:#}");
