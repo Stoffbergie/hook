@@ -1,4 +1,6 @@
-import { Hono, type Context } from "hono";
+import type { Context } from "hono";
+import { HonoBase as Hono } from "hono/hono-base";
+import { TrieRouter } from "hono/router/trie-router";
 import type { Hook, HookMeta } from "./hook";
 import type { Env } from "./env";
 import { randomName, validName } from "./names";
@@ -7,7 +9,7 @@ import { homePage, homeText, notFoundPage, viewerPage } from "./pages";
 type AppContext = Context<{ Bindings: Env }>;
 type Access = { meta: HookMeta; stub: DurableObjectStub<Hook> } | { response: Response };
 
-export const app = new Hono<{ Bindings: Env }>();
+export const app = new Hono<{ Bindings: Env }>({ router: new TrieRouter() });
 
 app.use("*", async (c, next) => {
   await next();
