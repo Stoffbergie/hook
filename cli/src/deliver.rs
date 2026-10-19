@@ -80,9 +80,9 @@ impl Deliverer {
         let started = Instant::now();
         match request.body(body).send().await {
             Ok(response) => {
-                let status = response.status().as_u16().to_string();
+                let status = response.status();
                 let took = output::duration(started.elapsed());
-                output::request(&detail.method, &detail.path, &status, &took);
+                output::request(&detail.method, &detail.path, status.as_str(), &took);
                 Ok(true)
             }
             Err(_) => {
